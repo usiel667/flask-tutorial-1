@@ -58,35 +58,56 @@ Flask_tutorial_1/
 
 ### Step 1: Environment Setup and Dependencies
 
-#### 1.1 Create Virtual Environment
+#### 1.1 System Dependencies (Arch Linux)
 
 ```bash
-# Create virtual environment
+# Update system packages
+sudo pacman -Syu
+
+# Install Python and pip (if not already installed)
+sudo pacman -S python python-pip
+
+# Install Python virtual environment support
+sudo pacman -S python-virtualenv
+```
+
+#### 1.2 Create Virtual Environment
+
+```bash
+# Create virtual environment (Arch Linux)
 python -m venv flask_env
 
 # Activate virtual environment
-# Windows:
-flask_env\Scripts\activate
-# Linux/Mac:
 source flask_env/bin/activate
+
+# Upgrade pip to latest version
+pip install --upgrade pip
 ```
 
-#### 1.2 Install Required Packages
+#### 1.3 Install Required Packages
 
 ```bash
+# Install Flask dependencies
 pip install flask flask-wtf email-validator python-dotenv
+
+# Optional: Install development tools
+pip install flask-debugtoolbar
 ```
 
-#### 1.3 Create Requirements File
+#### 1.4 Create Requirements File
 
 Create `requirements.txt`:
 
 ```txt
-Flask==2.3.3
+# Core Flask dependencies
+Flask==3.0.0
 Flask-WTF==1.2.1
 email-validator==2.1.0
 python-dotenv==1.0.0
 WTForms==3.1.1
+
+# Optional development dependencies
+flask-debugtoolbar==0.13.1
 ```
 
 ### Step 2: Project Restructuring
@@ -129,18 +150,22 @@ FLASK_DEBUG=True
 #### 2.3 Create App Directory Structure
 
 ```bash
-mkdir app
-mkdir app/templates
-mkdir static
-mkdir static/css
-mkdir static/js
+# Create directory structure
+mkdir -p app/templates
+mkdir -p static/{css,js}
+
+# Verify directory structure
+tree . || ls -la
 ```
 
 #### 2.4 Move Templates
 
 ```bash
-# Move existing templates to app/templates
-mv templates/* app/templates/
+# Move existing templates to app/templates (if they exist)
+if [ -d "templates" ]; then
+    mv templates/* app/templates/ 2>/dev/null || echo "No templates to move"
+    rmdir templates 2>/dev/null || echo "Templates directory not empty or doesn't exist"
+fi
 ```
 
 ### Step 3: Create Flask Application Factory
@@ -758,13 +783,22 @@ if __name__ == '__main__':
 
 ```bash
 # Activate virtual environment
-flask_env\Scripts\activate
+source flask_env/bin/activate
+
+# Set Flask environment variables (optional)
+export FLASK_APP=run.py
+export FLASK_ENV=development
+export FLASK_DEBUG=1
 
 # Run the application
 python run.py
 
+# Alternative: Use Flask's built-in server
+# flask run --host=0.0.0.0 --port=5000
+
 # Test in browser
 # Navigate to: http://localhost:5000/contact
+# Or: http://127.0.0.1:5000/contact
 ```
 
 ## 📚 Study References
@@ -869,5 +903,79 @@ You have successfully completed Phase 1.1 when you can:
 
 **Problem**: CSS/JS files return 404
 **Solution**: Check file paths and ensure static folder is in correct location
+
+## 🐧 Arch Linux Specific Issues
+
+### Issue 5: Python Package Conflicts
+
+**Problem**: Package conflicts between system Python and pip packages
+**Solution**: Always use virtual environments and avoid installing packages system-wide
+```bash
+# If you accidentally installed packages system-wide, clean up:
+sudo pacman -Rns python-flask python-wtforms  # Remove system packages
+# Then use virtual environment
+source flask_env/bin/activate
+pip install flask flask-wtf
+```
+
+### Issue 6: Permission Errors
+
+**Problem**: Permission denied when creating files/directories
+**Solution**: Ensure you're in your home directory and have proper permissions
+```bash
+# Check current directory permissions
+ls -la
+# Make sure you own the project directory
+sudo chown -R $USER:$USER /home/usiel667/DEV/flask-tutorial-1
+```
+
+### Issue 7: Python Version Issues
+
+**Problem**: Wrong Python version being used
+**Solution**: Verify Python version and update if needed
+```bash
+# Check Python version
+python --version  # Should be 3.8 or higher
+# If you need to update Python on Arch:
+sudo pacman -S python
+```
+
+### Issue 8: Virtual Environment Not Activating
+
+**Problem**: Virtual environment activation fails
+**Solution**: Recreate virtual environment with correct Python version
+```bash
+# Remove old virtual environment
+rm -rf flask_env
+# Create new virtual environment
+python -m venv flask_env
+source flask_env/bin/activate
+```
+
+### Issue 9: Port Already in Use
+
+**Problem**: Flask app can't start because port 5000 is busy
+**Solution**: Find and kill the process or use a different port
+```bash
+# Find process using port 5000
+sudo netstat -tulpn | grep :5000
+# Kill the process (replace PID with actual process ID)
+kill -9 PID
+# Or run Flask on a different port
+python run.py --port=8080
+```
+
+### Issue 10: Firewall Blocking Access
+
+**Problem**: Can't access Flask app from browser
+**Solution**: Check firewall settings
+```bash
+# Check if firewall is blocking
+sudo ufw status  # If you use ufw
+# Allow port 5000
+sudo ufw allow 5000
+# Or temporarily disable firewall for testing
+sudo ufw disable
+```
 
 Remember: Take your time with each step, test frequently, and refer to the documentation when needed. Good luck with your Flask forms implementation! 🎉
