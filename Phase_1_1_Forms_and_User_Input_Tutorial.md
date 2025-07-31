@@ -15,6 +15,7 @@ This tutorial will guide you through implementing forms and user input in your F
 - ✅ **Step 2.4** - Move Templates to `app/templates/`
 - ✅ **Step 3.1** - Create Flask Application Factory (`app/__init__.py`)
 - ✅ **Step 4.1** - Create Forms Module (`app/forms.py`)
+- ✅ **Step 6** - Update Templates
 
 ### 🔄 **NEXT UP:**
 - 📋 **Step 5.1** - Create Routes Module (`app/routes.py`)
@@ -266,6 +267,72 @@ class NewsletterForm(FlaskForm):
 
 #### 5.1 Create Routes Module
 
+## 🏗️ Understanding Template Inheritance in Flask
+
+Before creating routes, it's important to understand why you need both `base.html` and `index.html` templates and how they work together through Flask's template inheritance pattern.
+
+### **Why You Need Both Templates**
+
+**base.html (Base Template/Layout Template)**
+Your `base.html` serves as the **base template** that provides:
+
+1. **Common HTML structure** - DOCTYPE, head, body tags
+2. **Shared resources** - Bootstrap CSS/JS, consistent styling
+3. **Navigation bar** - The navbar that appears on all pages
+4. **Template blocks** - `{% block title %}` and `{% block content %}` for child templates to fill
+5. **Consistent layout** - Ensures all pages have the same look and feel
+
+**index.html (Home Page Content)**
+Your `index.html` is a **child template** that:
+
+1. **Extends base.html** - `{% extends "base.html" %}` inherits all the structure
+2. **Fills in specific content** - Provides the title "Home Page" and welcome message
+3. **Represents your home page** - The content users see when they visit your root URL
+
+### **Template Inheritance Pattern**
+
+```
+base.html (skeleton)     →     index.html (content)     →     Final rendered page
+├── HTML structure              ├── Title: "Home Page"           ├── Full HTML with navbar
+├── Bootstrap CSS/JS            └── Content: Welcome msg         ├── Bootstrap styling  
+├── Navigation bar                                               ├── Welcome message
+└── Placeholder blocks                                           └── All combined
+```
+
+### **How They Work Together**
+
+1. **base.html** defines the overall page structure with placeholder blocks:
+   ```html
+   <title>{% block title %}{% endblock %}</title>
+   <body>
+     <nav><!-- Navigation bar --></nav>
+     {% block content %}{% endblock %}
+   </body>
+   ```
+
+2. **index.html** extends base.html and fills in the blocks:
+   ```html
+   {% extends "base.html" %}
+   {% block title %}Home Page{% endblock %}
+   {% block content %}
+     <h1>Welcome to the Home Page</h1>
+   {% endblock %}
+   ```
+
+3. **Flask renders** the final page by combining both templates:
+   - Takes the structure from `base.html`
+   - Fills in the blocks with content from `index.html`
+   - Results in a complete HTML page with navigation, styling, and specific content
+
+### **Benefits of Template Inheritance**
+
+- **DRY Principle** - Don't Repeat Yourself; write common HTML once
+- **Consistency** - All pages share the same layout and styling
+- **Maintainability** - Change navigation or styling in one place
+- **Scalability** - Easy to add new pages that inherit the same structure
+
+**In summary**: Both templates are essential - `base.html` provides the consistent structure and navigation, while `index.html` provides the specific content for your home page. This is a standard Flask pattern that keeps your code organized and maintainable.
+
 Create `app/routes.py`:
 
 ```python
@@ -336,7 +403,60 @@ def newsletter():
 
 ### Step 6: Update Templates
 
-#### 6.1 Update Base Template
+#### 6.1 Update Base Template ✅ COMPLETED
+
+**🔍 Code Changes Explanation:**
+
+The updated `base.html` template introduces several key improvements to support Flask-WTF forms and the new application structure:
+
+**1. Navigation URL Updates:**
+```html
+<!-- OLD: Simple function calls -->
+<a href="{{ url_for('home') }}">
+
+<!-- NEW: Blueprint-based routing -->
+<a href="{{ url_for('main.home') }}">
+```
+**Why:** With the Flask application factory pattern and blueprints, all routes are now namespaced under the 'main' blueprint.
+
+**2. Flash Messages System:**
+```html
+<!-- Flash Messages Block -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }}"...>
+        {{ message }}
+        <button type="button" class="btn-close"...></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+```
+**Why:** This provides user feedback for form submissions. Categories ('error', 'success') determine the Bootstrap alert styling, and messages auto-dismiss with close buttons.
+
+**3. Static File Integration:**
+```html
+<!-- Custom CSS -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+
+<!-- Custom JavaScript -->
+<script src="{{ url_for('static', filename='js/form-validation.js') }}"></script>
+```
+**Why:** Links to custom styling and client-side form validation scripts that enhance user experience.
+
+**4. Contact Navigation Link:**
+```html
+<li class="nav-item">
+  <a class="nav-link" href="{{ url_for('main.contact') }}">Contact</a>
+</li>
+```
+**Why:** Adds navigation to the new contact form page.
+
+**5. Bootstrap 5 Compatibility:**
+- Uses `btn-close` instead of the old `close` class
+- Implements proper `alert-dismissible` functionality
+- Uses modern Bootstrap 5.3.0 CDN links with integrity hashes for security
 
 Update `app/templates/base.html`:
 
@@ -398,22 +518,25 @@ Update `app/templates/base.html`:
 
     <div class="container mt-4">
       <!-- Flash Messages -->
-      {% with messages = get_flashed_messages(with_categories=true) %} {% if
-      messages %} {% for category, message in messages %}
-      <div
-        class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show"
-        role="alert"
-      >
-        {{ message }}
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="alert"
-          aria-label="Close"
-        ></button>
-      </div>
-      {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock %}
-    </div>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div
+              class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show"
+              role="alert"
+            >
+              {{ message }}
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+                aria-label="Close"
+              ></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
 
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
